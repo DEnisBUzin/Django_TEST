@@ -30,7 +30,7 @@ def course_factory():
     return factory
 
 
-# Проверка получения первого курса (retrieve-логика)
+# 1. Проверка получения первого курса (retrieve-логика)
 @pytest.mark.django_db
 def test_get_first_course(client,
                           course_factory,):
@@ -42,7 +42,7 @@ def test_get_first_course(client,
     assert response.data['name'] == 'Python'
 
 
-# Проверка получения списка курсов (list-логика)
+# 2. Проверка получения списка курсов (list-логика)
 @pytest.mark.django_db
 def test_get_course_list(client,
                          course_factory,):
@@ -53,7 +53,7 @@ def test_get_course_list(client,
     assert response.status_code == 200
     assert len(response.json()) == len(courses)
 
-# Проверка фильтрации списка курсов по id
+# 3. Проверка фильтрации списка курсов по id
 @pytest.mark.django_db
 def test_filter_courses_id(client,
                         course_factory):
@@ -72,7 +72,7 @@ def test_filter_courses_id(client,
     assert response_data[0]['id'] == course_id
 
 
-# Проверка фильтрации списка курсов по name
+# 4. Проверка фильтрации списка курсов по name
 @pytest.mark.django_db
 def test_filter_courses_name(client,
                         course_factory):
@@ -89,3 +89,26 @@ def test_filter_courses_name(client,
     response_data = response.json()
     assert len(response_data) == 1
     assert response_data[0]['name'] == course_name
+
+
+# Тест успешного создания курса
+@pytest.mark.django_db
+def test_success_post_course(client):
+
+    data = {
+        'name': 'Course_test',
+    }
+    response =client.post('/api/v1/courses/', data=data)
+
+
+    assert response.status_code == 201
+
+# 6. Тест успешного обновления курса
+@pytest.mark.django_db
+def test_success_patch_course(client):
+
+    courses = baker.make('students.Course', _quantity=10)
+    course_id = courses[0].id
+    data = {
+        'name': 'Python-разработчик'
+    }
