@@ -1,3 +1,4 @@
+from django.urls import reverse
 from rest_framework.test import APIClient
 import pytest as pytest
 from model_bakery import baker
@@ -5,11 +6,13 @@ from model_bakery import baker
 from students.models import Course, Student
 
 
-@pytest.fixture  # Фикстура клиента
+# Фикстура клиента
+@pytest.fixture
 def client():
     return APIClient()
 
 
+# Фикстура создания фабрики студентов
 @pytest.fixture
 def student_factory():
     def factory(*args, **kwargs):
@@ -18,6 +21,7 @@ def student_factory():
     return factory
 
 
+# Фикстура создания фабрики студентов
 @pytest.fixture
 def course_factory():
     def factory(*args, **kwargs):
@@ -26,8 +30,62 @@ def course_factory():
     return factory
 
 
+# Проверка получения первого курса (retrieve-логика)
 @pytest.mark.django_db
 def test_get_first_course(client,
-                          ):
-    pass
+                          course_factory,):
 
+    course = course_factory(name='Python',)
+    response = client.get(f'/api/v1/courses/{course.id}/')
+
+    assert response.status_code == 200
+    assert response.data['name'] == 'Python'
+
+
+# Проверка получения списка курсов (list-логика)
+@pytest.mark.django_db
+def test_get_course_list(client,
+                         course_factory,):
+
+    courses = baker.make('students.Course', _quantity=10)
+    response = client.get(f'/api/v1/courses/')
+
+    assert response.status_code == 200
+    assert len(response.json()) == len(courses)
+
+# Проверка фильтрации списка курсов по id
+@pytest.mark.django_db
+def test_filter_courses_id(client,
+                        course_factory):
+
+    courses = baker.make('students.Course', _quantity=10)
+    course_id = courses[0].id
+
+    response = client.get(f'/api/v1/courses/?id={course_id}')
+
+    # Проверяем, что статус ответа — 200(ОК)
+    assert response.status_code == 200
+
+    # Проверяем, что в ответе содержится только один курс с заданным ID
+    response_data = response.json()
+    assert len(response_data) == 1
+    assert response_data[0]['id'] == course_id
+
+
+# Проверка фильтрации списка курсов по name
+@pytest.mark.django_db
+def test_filter_courses_name(client,
+                        course_factory):
+
+    courses = baker.make('students.Course', _quantity=10)
+    course_name = courses[0].name
+
+    response = client.get(f'/api/v1/courses/?name={course_name}')
+
+    # Проверяем, что статус ответа — 200(ОК)
+    assert response.status_code == 200
+
+    # Проверяем, что в ответе содержится только один курс с заданным именем
+    response_data = response.json()
+    assert len(response_data) == 1
+    assert response_data[0]['name'] == course_name
