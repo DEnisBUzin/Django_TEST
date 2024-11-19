@@ -1,8 +1,6 @@
-from django.urls import reverse
 from rest_framework.test import APIClient
 import pytest as pytest
 from model_bakery import baker
-
 from students.models import Course, Student
 
 
@@ -33,9 +31,8 @@ def course_factory():
 # 1. Проверка получения первого курса (retrieve-логика)
 @pytest.mark.django_db
 def test_get_first_course(client,
-                          course_factory,):
-
-    course = course_factory(name='Python',)
+                          course_factory, ):
+    course = course_factory(name='Python', )
     response = client.get(f'/api/v1/courses/{course.id}/')
 
     assert response.status_code == 200
@@ -45,20 +42,19 @@ def test_get_first_course(client,
 # 2. Проверка получения списка курсов (list-логика)
 @pytest.mark.django_db
 def test_get_course_list(client,
-                         course_factory,):
-
-    courses = baker.make('students.Course', _quantity=10)
+                         course_factory, ):
+    courses = course_factory(_quantity=10)
     response = client.get(f'/api/v1/courses/')
 
     assert response.status_code == 200
     assert len(response.json()) == len(courses)
 
+
 # 3. Проверка фильтрации списка курсов по id
 @pytest.mark.django_db
 def test_filter_courses_id(client,
-                        course_factory):
-
-    courses = baker.make('students.Course', _quantity=10)
+                           course_factory):
+    courses = course_factory(_quantity=10)
     course_id = courses[0].id
 
     response = client.get(f'/api/v1/courses/?id={course_id}')
@@ -75,9 +71,8 @@ def test_filter_courses_id(client,
 # 4. Проверка фильтрации списка курсов по name
 @pytest.mark.django_db
 def test_filter_courses_name(client,
-                        course_factory):
-
-    courses = baker.make('students.Course', _quantity=10)
+                             course_factory):
+    courses = course_factory(_quantity=10)
     course_name = courses[0].name
 
     response = client.get(f'/api/v1/courses/?name={course_name}')
@@ -94,21 +89,51 @@ def test_filter_courses_name(client,
 # Тест успешного создания курса
 @pytest.mark.django_db
 def test_success_post_course(client):
-
     data = {
         'name': 'Course_test',
     }
-    response =client.post('/api/v1/courses/', data=data)
-
+    response = client.post('/api/v1/courses/', data=data)
 
     assert response.status_code == 201
 
+
 # 6. Тест успешного обновления курса
 @pytest.mark.django_db
-def test_success_patch_course(client):
-
-    courses = baker.make('students.Course', _quantity=10)
+def test_success_put_course(client,
+                            course_factory):
+    courses = course_factory(_quantity=10)
     course_id = courses[0].id
     data = {
         'name': 'Python-разработчик'
     }
+    response = client.put(f'/api/v1/courses/{course_id}/',
+                          data)
+
+    # Проверяем, что статус ответа — 200(ОК)
+    assert response.status_code == 200
+
+    # Обновляем курс из базы данных
+    courses[0].refresh_from_db()
+
+    # Проверяем, что имя курса было обновлено
+    assert courses[0].name == data['name']
+
+
+# 7. Тест успешного удаления курса.
+@pytest.mark.django_db
+def test_success_delete_course(client,
+                               course_factory):
+
+    course = course_factory(_quantity=10)
+    course_id = course[0].id
+
+    response = client.delete(f'/api/v1/courses/{course_id}/')
+
+    # Проверяем, что статус ответа — 204 (No Content)
+    assert response.status_code == 204
+
+    # Проверяем, что курс удалён из базы данных
+    assert course_id not in course
+
+
+
