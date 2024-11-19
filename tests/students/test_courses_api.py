@@ -124,16 +124,21 @@ def test_success_put_course(client,
 def test_success_delete_course(client,
                                course_factory):
 
-    course = course_factory(_quantity=10)
-    course_id = course[0].id
+    course = course_factory(_quantity=5)
+    course_id= course[0].id
 
     response = client.delete(f'/api/v1/courses/{course_id}/')
 
     # Проверяем, что статус ответа — 204 (No Content)
     assert response.status_code == 204
 
+    response = client.get(f'/api/v1/courses/')
+    response_data = response.json()
+    check_list = [course['id'] for course in response_data]
+
     # Проверяем, что курс удалён из базы данных
-    assert course_id not in course
+    assert course_id not in check_list
+    assert len(check_list) == 4
 
 
 
